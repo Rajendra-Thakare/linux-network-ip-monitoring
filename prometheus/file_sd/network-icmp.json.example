@@ -1,0 +1,14 @@
+<escape>[
+{
+"targets": [
+"192.0.2.10",
+"192.0.2.11",
+"192.0.2.12"
+],
+"labels": {
+"job": "network_icmp",
+"monitor_type": "icmp",
+"environment": "example"
+}
+}
+]</escape>
