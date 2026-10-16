@@ -1,151 +1,190 @@
-Linux Network IP Reachability Monitoring
+🚀 Linux Network IP Reachability Monitoring
 
-A Linux-based network monitoring project using Prometheus, Blackbox Exporter, and Grafana to monitor the ICMP reachability of multiple IP addresses and visualize the results in a dashboard.
+<p align="center">
+  <strong>Automated Network Monitoring with Prometheus, Blackbox Exporter & Grafana</strong>
+</p><p align="center">
+  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Ubuntu-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux and Ubuntu" />
+  <img src="https://img.shields.io/badge/Metrics-Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus" />
+  <img src="https://img.shields.io/badge/Monitoring-Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana" />
+  <img src="https://img.shields.io/badge/Automation-Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white" alt="Bash" />
+</p>A Linux-based network monitoring project designed to discover authorized network targets, check their ICMP reachability, and visualize monitoring metrics through Grafana.
 
-Project Overview
+The project combines network discovery, Prometheus file-based service discovery, Blackbox Exporter probes, and Grafana dashboards to provide a centralized view of network reachability.
 
-This project automates network target discovery and monitors whether configured IP addresses respond to ICMP probes. Prometheus collects and stores the resulting metrics, while Grafana queries Prometheus to visualize network reachability.
+---
 
-The project also uses a discovery script, file-based service discovery, and a systemd timer to refresh the monitored target list automatically.
+📌 Project Overview
 
-Architecture
+Component| Responsibility
+Network Discovery Script| Identifies responding hosts in an authorized network range
+File-Based Service Discovery| Supplies target IP addresses to Prometheus
+Blackbox Exporter| Performs ICMP probes against target IPs
+Prometheus| Collects and stores monitoring metrics
+Grafana| Visualizes reachability status
+systemd Timer| Schedules automatic target discovery
+
+🏗️ Architecture
 
 flowchart TD
-    A["Network IP Range"] --> B["Network Discovery Script"]
-    B --> C["network-icmp.json"]
+    A["Authorized Network Range"] --> B["Bash Discovery Script"]
+    B --> C["Target JSON File"]
     C --> D["Prometheus File SD"]
-    D --> E["Prometheus"]
-    E -->|Scrapes probe metrics| F["Blackbox Exporter"]
-    F -->|ICMP probes| G["Target IP Addresses"]
-    E --> H["Grafana Dashboard"]
+    D --> E["Prometheus Server"]
+    E -->|"Probe request"| F["Blackbox Exporter"]
+    F -->|"ICMP probe"| G["Target IP Addresses"]
+    F -->|"Probe metrics"| E
+    E -->|"PromQL queries"| H["Grafana Dashboard"]
     I["systemd Timer"] --> B
 
-Monitoring flow:
+    classDef automation fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef monitoring fill:#e3f2fd,stroke:#1565c0,color:#111
+    classDef dashboard fill:#fff3e0,stroke:#ef6c00,color:#111
 
-1. The discovery script identifies IP addresses within the configured network range.
-2. The script updates the file-based discovery target list.
-3. Prometheus reads the target list.
-4. Blackbox Exporter performs ICMP probes against the target IP addresses.
-5. Prometheus scrapes and stores the probe metrics.
-6. Grafana queries Prometheus and visualizes reachability information.
+    class B,C,I automation
+    class D,E,F,G monitoring
+    class H dashboard
 
-Technology Stack
+✨ Key Features
+
+- 🔍 Automated discovery of responding network hosts
+- 📡 ICMP reachability monitoring through Blackbox Exporter
+- 📊 Centralized metric collection using Prometheus
+- 📈 Dashboard visualization with Grafana
+- ⚙️ Scheduled discovery using systemd timers
+- 🧰 PromQL queries for identifying successful and failed probes
+- 🛠️ Troubleshooting and configuration documentation
+
+🧰 Technology Stack
 
 Technology| Purpose
-Linux / Ubuntu| Monitoring server operating system
-Prometheus| Metrics collection and time-series storage
-Blackbox Exporter| ICMP reachability probes
-Grafana| Monitoring dashboards and visualization
+Linux / Ubuntu| Monitoring server
 Bash| Network discovery automation
-JSON| File-based service discovery targets
-systemd| Automated execution using a timer
-PromQL| Querying monitoring metrics
+Nmap| Host discovery in the example script
+Prometheus| Metrics collection and storage
+Blackbox Exporter| ICMP reachability checks
+Grafana| Dashboards and visualization
+JSON| Target configuration
+systemd| Service management and scheduling
+PromQL| Metrics querying
 
-Services and Ports
+🔌 Default Service Ports
 
-Component| Port| Purpose
-Prometheus| 9090| Metrics and query interface
-Blackbox Exporter| 9115| Probe endpoint
-Grafana| 3000| Dashboard interface
+Service| Port| Purpose
+Prometheus| "9090"| Metrics and query interface
+Blackbox Exporter| "9115"| Probe endpoint
+Grafana| "3000"| Dashboard interface
 
-Ports are the project's configured defaults and should be verified against the deployed environment.
+These are default ports; verify them against the deployed configuration.
 
-Key Metric
+📈 Prometheus Queries
 
-The main metric used for ICMP reachability monitoring is:
+1. Current reachability status
 
 probe_success{job="network_icmp"}
 
-Interpretation:
+- "1" — the latest ICMP probe succeeded.
+- "0" — the latest ICMP probe failed.
+- No result — the target may not be discovered or the metric may be unavailable.
 
-- "1" — the probe succeeded.
-- "0" — the probe failed.
+2. Count monitored probe results
 
-To inspect the latest result for each target, use an Instant query in Grafana. To count results by IP address, use:
+count(probe_success{job="network_icmp"})
 
-count by (instance) (
-  probe_success{job="network_icmp"}
-)
+3. Count successful probes
 
-Example Configuration
+sum(probe_success{job="network_icmp"} == 1)
 
-The Prometheus scrape job uses Blackbox Exporter and file-based service discovery.
+4. Show failed targets
 
-- job_name: "network_icmp"
-  metrics_path: /probe
-  params:
-    module: [icmp]
-  file_sd_configs:
-    - files:
-        - "/etc/prometheus/file_sd/network-icmp.json"
-      refresh_interval: 60s
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: localhost:9115
+probe_success{job="network_icmp"} == 0
 
-Adapt this example to your environment. The target file must contain valid file-discovery JSON, and the Blackbox Exporter must have an appropriate ICMP module configured.
+⚙️ Automation Workflow
 
-Automation
+1. The discovery script scans a configured, authorized network range.
+2. Responding hosts are written to a JSON target list.
+3. Prometheus reads targets through file-based service discovery.
+4. Prometheus requests probes from Blackbox Exporter.
+5. Blackbox Exporter performs ICMP checks against the target IPs.
+6. Prometheus stores the resulting metrics.
+7. Grafana queries Prometheus and presents the results.
+8. A systemd timer can schedule repeated discovery runs.
 
-A Bash discovery script and systemd timer are used to refresh the monitored target list periodically.
+📁 Repository Structure
 
-The discovery script should validate its output before replacing the active target file. Network ranges, permissions, and the minimum-host safety check must be adjusted to the intended environment.
+linux-network-ip-monitoring/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── prometheus/
+│   ├── prometheus.yml.example
+│   └── file_sd/
+│       └── network-icmp.json.example
+├── scripts/
+│   └── network-discovery.sh
+├── systemd/
+│   ├── network-discovery.service
+│   └── network-discovery.timer
+├── grafana/
+│   └── README.md
+└── docs/
+    ├── architecture.md
+    ├── installation.md
+    ├── troubleshooting.md
+    ├── promql-queries.md
+    └── security.md
 
-Dashboard
+This structure describes the planned repository layout. Keep it synchronized with the files actually committed to the repository.
 
-The intended Grafana dashboard includes:
+🛠️ Validation and Troubleshooting
 
-- IP address ("instance")
-- ICMP reachability status
-- Monitoring job
-- Last query or observation time, where appropriate
+Check the Prometheus target page:
 
-The dashboard export and screenshots should be added after the table visualization has been verified to display distinct IP addresses correctly.
+http://<monitoring-server>:9090/targets
 
-Troubleshooting
+Check the Blackbox Exporter endpoint:
 
-Prometheus returns multiple IP addresses, but Grafana does not display them correctly
+http://<monitoring-server>:9115/
 
-1. Confirm that Grafana uses the intended Prometheus data source.
-2. Test "probe_success{job="network_icmp"}" in Grafana.
-3. Select Instant for a current-status table.
-4. Select Table rather than Time series for a list of IP addresses.
-5. Inspect the query response and remove unintended transformations or field overrides.
-6. Verify that the "instance" label contains distinct target IP addresses.
+Useful commands on the Linux monitoring server:
 
-A target reports "0"
+systemctl status prometheus
+systemctl status blackbox_exporter
+promtool check config /etc/prometheus/prometheus.yml
+journalctl -u prometheus --since "15 minutes ago"
 
-Check network reachability, routing, firewall rules, ICMP permissions, and the Blackbox Exporter logs. A failed probe does not necessarily mean the host is powered off.
+Service names can vary depending on the installation. Confirm the actual systemd unit names before using these commands.
 
-Security and Privacy
+🔐 Security Considerations
 
-- Never commit passwords, tokens, credentials, or private keys.
-- Do not publish internal network details without authorization.
-- Replace real internal IP addresses and domains in example files.
-- Review exported Grafana dashboards and configuration files before publishing.
-- Do not upload Prometheus data directories, database files, or terminal logs containing sensitive information.
+- Monitor only networks you own or are authorized to administer.
+- Do not publish internal IP inventories or confidential network details.
+- Never commit passwords, tokens, private keys, or credentials.
+- Sanitize configuration files, dashboard exports, logs, and screenshots.
+- Restrict access to monitoring interfaces according to your environment.
 
-Project Status
+🗺️ Future Improvements
 
-The monitoring stack and IP discovery workflow have been configured in a Linux environment. The Grafana visualization is still being finalized to ensure that all monitored IP addresses appear as distinct rows in the reachability table.
-
-Future Improvements
-
-- Finalize the all-IP Grafana table.
-- Add alert rules for failed ICMP probes.
+- Finalize a Grafana table displaying each target as a separate row.
+- Add alert rules for failed probes.
 - Configure Alertmanager notifications.
-- Add additional Blackbox Exporter checks where appropriate.
-- Improve discovery error handling and logging.
-- Document installation and validation steps.
+- Improve discovery error handling and reporting.
+- Add verified dashboard exports and demonstration screenshots.
+- Document deployment and validation steps.
 
-Learning Outcomes
+👨‍💻 Skills Demonstrated
 
-This project provides hands-on practice with Linux service management, Bash automation, Prometheus scrape configuration, file-based service discovery, relabeling, PromQL, ICMP monitoring, Grafana visualization, and troubleshooting.
+Linux Administration · Network Troubleshooting · Bash Scripting · Prometheus · Blackbox Exporter · Grafana · PromQL · systemd · JSON Configuration · Monitoring Automation
 
-Disclaimer
+⚠️ Project Status
 
-This repository is intended for learning and authorized network monitoring. Adapt all configurations to your own environment and obtain permission before probing networks you do not administer.
+This repository documents the monitoring design, configuration examples, and automation workflow. Verify the actual deployment, scheduled discovery, and Grafana dashboard behavior before describing those features as fully operational.
+
+📄 License
+
+Distributed under the MIT License. See "LICENSE" (LICENSE).
+
+---
+
+<p align="center">
+  <strong>Linux • Monitoring • Automation • Observability</strong>
+</p>
