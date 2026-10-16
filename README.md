@@ -175,9 +175,28 @@ Service names can vary depending on the installation. Confirm the actual systemd
 
 Linux Administration · Network Troubleshooting · Bash Scripting · Prometheus · Blackbox Exporter · Grafana · PromQL · systemd · JSON Configuration · Monitoring Automation
 
-⚠️ Project Status
+📸 Dashboard Preview
 
-This repository documents the monitoring design, configuration examples, and automation workflow. Verify the actual deployment, scheduled discovery, and Grafana dashboard behavior before describing those features as fully operational.
+Network Reachability — Time Series
+
+This panel visualizes ICMP probe results for monitored IP addresses over time using Grafana and Prometheus.
+
+"Grafana network reachability time series" (docs/screenshots/grafana-time-series.png)
+
+Metric: "probe_success{job="network_icmp"}"
+
+- "1" — ICMP probe succeeded.
+- "0" — ICMP probe failed.
+
+«The time-series panel is part of the current implementation. A separate table panel for displaying the latest status of each IP is planned.»
+
+🚧 Project Status
+
+- Prometheus, Blackbox Exporter and Grafana have been configured.
+- Network target discovery and ICMP monitoring have been set up.
+- The Grafana time-series panel displays probe results for multiple IP addresses.
+- A table view, alerting improvements and additional documentation are planned.
+  
 
 📄 License
 
