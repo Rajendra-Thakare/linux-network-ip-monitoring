@@ -1,0 +1,18 @@
+[Unit]
+Description=Discover network hosts for Prometheus ICMP monitoring
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/network-discovery.sh
+User=root
+Group=root
+
+Restrict unnecessary privileges and filesystem access
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/etc/prometheus/file_sd
