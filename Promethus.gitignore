@@ -1,0 +1,33 @@
+Secrets and credentials
+
+.env
+.env.*
+*.pem
+*.key
+secrets/
+credentials/
+
+Prometheus runtime data
+
+prometheus/data/
+data/
+
+Logs and terminal recordings
+
+*.log
+terminal-session.txt
+prometheus-status.txt
+monitoring-report.txt
+
+Downloaded archives and binaries
+
+.tar.gz
+prometheus-.linux-amd64/
+blackbox_exporter-/
+node_exporter-/
+alertmanager-*/
+
+Temporary files
+
+*.tmp
+*.bak
